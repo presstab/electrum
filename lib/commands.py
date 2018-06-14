@@ -199,7 +199,11 @@ class Commands:
         is a walletless server query, results are not checked by SPV.
         """
         sh = bitcoin.address_to_scripthash(address)
-        return self.network.listunspent_for_scripthash(sh)
+        results = self.network.listunspent_for_scripthash(sh)
+        height = self.network.get_local_height()
+        json_obj = {'chain_height': height}
+        results.append(json_obj)
+        return results
 
     @command('')
     def serialize(self, jsontx):
