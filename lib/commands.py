@@ -200,6 +200,12 @@ class Commands:
         """
         sh = bitcoin.address_to_scripthash(address)
         results = self.network.listunspent_for_scripthash(sh)
+        for output in results:
+            if "tx_hash" in output:
+                raw = self.network.get_transaction(output['tx_hash'])
+                if raw:
+                    tx = Transaction(raw)
+                    output['inputs'] = tx.inputs()
         height = self.network.get_local_height()
         json_obj = {'chain_height': height}
         results.append(json_obj)
