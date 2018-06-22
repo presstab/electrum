@@ -672,6 +672,18 @@ class Commands:
         to config settings (static/dynamic)"""
         return self.config.fee_per_kb()
 
+    @command('n')
+    def getdynamicfeerate(self):
+        """Return current optimal fee rate per kilobyte, according
+        to the dynamic fees without the mempool"""
+        return self.config.fee_per_kb(dyn=True, mempool=False)
+
+    @command('n')
+    def getmempoolfeerate(self):
+        """Return current optimal fee rate per kilobyte, according
+        to the mempool"""
+        return self.config.fee_per_kb(dyn=True, mempool=True)
+
     @command('')
     def help(self):
         # for the python console
