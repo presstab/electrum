@@ -206,7 +206,7 @@ class Commands:
                 if raw:
                     tx = Transaction(raw)
                     output['inputs'] = tx.inputs()
-        height = self.network.get_local_height()
+        height = self.network.get_server_height()
         json_obj = {'chain_height': height}
         results.append(json_obj)
         return results
