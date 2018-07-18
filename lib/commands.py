@@ -684,6 +684,16 @@ class Commands:
         to the mempool"""
         return self.config.fee_per_kb(dyn=True, mempool=True)
 
+    @command('n')
+    def getheight(self):
+        """Return current height of blockchain"""
+        return self.network.get_local_height();
+
+    @command('n')
+    def getblockhashfromheight(self, height):
+        """Return the blockhash of the block at the given height"""
+        return self.network.get_block_hash(height);
+
     @command('')
     def help(self):
         # for the python console
