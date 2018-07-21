@@ -692,7 +692,8 @@ class Commands:
     @command('n')
     def getblockhashfromheight(self, height):
         """Return the blockhash of the block at the given height"""
-        return self.network.get_block_hash(height);
+        out = { 'hash' : str(self.network.get_block_hash(height)) }
+        return out;
 
     @command('')
     def help(self):
