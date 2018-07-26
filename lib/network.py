@@ -811,6 +811,30 @@ class Network(util.DaemonThread):
         interface.request = height
         interface.req_time = time.time()
 
+    @staticmethod
+    def __wait_for(it):
+        """Wait for the result of calling lambda `it`."""
+        q = queue.Queue()
+        it(q.put)
+        try:
+            result = q.get(block=True, timeout=30)
+        except queue.Empty:
+            raise util.TimeoutException(_('Server did not answer'))
+
+        if result.get('error'):
+            raise Exception(result.get('error'))
+
+        return result.get('result')
+
+    @staticmethod
+    def __with_default_synchronous_callback(invocation, callback):
+        """ Use this method if you want to make the network request
+        synchronous. """
+        if not callback:
+            return Network.__wait_for(invocation)
+
+        invocation(callback)
+
     def on_get_header(self, interface, response):
         '''Handle receiving a single block header'''
         header = response.get('result')
@@ -1077,6 +1101,30 @@ class Network(util.DaemonThread):
             raise Exception(r.get('error'))
         return r.get('result')
 
+    def get_transaction(self, transaction_hash, callback=None):
+        command = 'blockchain.transaction.get'
+
+        def invocation(c):
+            self.send([(command, [transaction_hash])], c)
+
+        return Network.__with_default_synchronous_callback(invocation, callback)
+
+    def listunspent_for_scripthash(self, scripthash, callback=None):
+        command = 'blockchain.scripthash.listunspent'
+
+        def invocation(c):
+            return self.send([(command, [scripthash])], c)
+
+        return Network.__with_default_synchronous_callback(invocation, callback)
+
+    def get_balance_for_scripthash(self, scripthash, callback=None):
+        command = 'blockchain.scripthash.get_balance'
+
+        def invocation(c):
+            return self.send([(command, [scripthash])], c)
+
+        return Network.__with_default_synchronous_callback(invocation, callback)
+
     def broadcast(self, tx, timeout=30):
         tx_hash = tx.txid()
         try:
@@ -1095,3 +1143,6 @@ class Network(util.DaemonThread):
 
     def max_checkpoint(self):
         return max(0, len(constants.net.CHECKPOINTS) * 2016 - 1)
+
+    def get_block_hash(self, height):
+        return str(self.blockchain().get_hash(height))
