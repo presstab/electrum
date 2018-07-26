@@ -687,13 +687,13 @@ class Commands:
     @command('n')
     def getheight(self):
         """Return current height of blockchain"""
-        return self.network.get_local_height();
+        return self.network.get_server_height()
 
     @command('n')
     def getblockhashfromheight(self, height):
         """Return the blockhash of the block at the given height"""
-        out = { 'hash' : str(self.network.get_block_hash(height)) }
-        return out;
+        out = {'hash': str(self.network.get_block_hash(height))}
+        return out
 
     @command('')
     def help(self):
