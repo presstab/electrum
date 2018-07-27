@@ -215,7 +215,6 @@ class Commands:
     def getaddressspent(self, address):
         """Returns all transactions that contain the address argument as
         an input."""
-
         results = []
         sh = bitcoin.address_to_scripthash(address)
         history = self.network.get_history_for_scripthash(sh)
@@ -230,6 +229,37 @@ class Commands:
                                 transaction[key] = tx[key]
                             results.append(transaction)
                             break
+
+        height = self.network.get_server_height()
+        json_obj = {'chain_height': height}
+        results.append(json_obj)
+        return results
+
+    @command('n')
+    def getaddressutxostate(self, address):
+        """For a given address, returns its UTXO list as well as former UTXOs
+        that have since been spent."""
+        results = {}
+        sh = bitcoin.address_to_scripthash(address)
+        unspent = self.network.listunspent_for_scripthash(sh)
+        results['unspent'] = unspent
+
+        spent = []
+        history = self.network.get_history_for_scripthash(sh)
+        for transaction in history:
+            if "tx_hash" in transaction:
+                raw = self.network.get_transaction(transaction['tx_hash'])
+                if raw:
+                    tx = Transaction(raw).deserialize(True)
+                    for tx_input in tx['inputs']:
+                        if tx_input['address'] == address:
+                            transaction['inputs'] = tx['inputs']
+                            transaction['outputs'] = tx['outputs']
+                            spent.append(transaction)
+
+        results['spent'] = spent
+        height = self.network.get_server_height()
+        results['chain_height'] = height
         return results
 
     @command('')
