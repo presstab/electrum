@@ -213,6 +213,27 @@ class Commands:
         results.append(json_obj)
         return results
 
+    @command('n')
+    def getaddressspent(self, address):
+        """Returns all transactions that contain the address argument as
+        an input."""
+
+        results = []
+        sh = bitcoin.address_to_scripthash(address)
+        history = self.network.synchronous_get(('blockchain.scripthash.get_history', [sh]))
+        for transaction in history:
+            if "tx_hash" in transaction:
+                raw = self.network.get_transaction(transaction['tx_hash'])
+                if raw:
+                    tx = Transaction(raw).deserialize()
+                    for tx_input in tx['inputs']:
+                        if tx_input['address'] == address:
+                            for key in tx:
+                                transaction[key] = tx[key]
+                            results.append(transaction)
+                            break
+        return results
+
     @command('')
     def serialize(self, jsontx):
         """Create a transaction from json inputs.
