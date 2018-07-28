@@ -252,12 +252,15 @@ class Commands:
             if "tx_hash" in transaction:
                 raw = self.network.get_transaction(transaction['tx_hash'])
                 if raw:
+                    inputs_flag = False
                     tx = Transaction(raw).deserialize()
+                    transaction['inputs'] = []
                     for tx_input in tx['inputs']:
                         if tx_input['address'] == address:
-                            transaction['inputs'] = tx['inputs']
-                            transaction['outputs'] = tx['outputs']
-                            spent.append(transaction)
+                            transaction['inputs'].append(tx_input['prevout_hash'])
+                            inputs_flag = True
+                    if inputs_flag:
+                        spent.append(transaction)
 
         results['spent'] = spent
         height = self.network.get_server_height()
