@@ -1286,3 +1286,6 @@ class Network(util.DaemonThread):
     @classmethod
     def max_checkpoint(cls):
         return max(0, len(constants.net.CHECKPOINTS) * 2016 - 1)
+
+    def get_block_hash(self, height):
+        return str(self.blockchain().get_hash(height))

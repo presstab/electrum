@@ -199,7 +199,17 @@ class Commands:
         is a walletless server query, results are not checked by SPV.
         """
         sh = bitcoin.address_to_scripthash(address)
-        return self.network.listunspent_for_scripthash(sh)
+        results = self.network.listunspent_for_scripthash(sh)
+        for output in results:
+            if "tx_hash" in output:
+                raw = self.network.get_transaction(output['tx_hash'])
+                if raw:
+                    tx = Transaction(raw)
+                    output['inputs'] = tx.inputs()
+        height = self.network.get_server_height()
+        json_obj = {'chain_height': height}
+        results.append(json_obj)
+        return results
 
     @command('')
     def serialize(self, jsontx):
@@ -674,6 +684,29 @@ class Commands:
         if fee_level is not None:
             fee_level = Decimal(fee_level)
         return self.config.fee_per_kb(dyn=dyn, mempool=mempool, fee_level=fee_level)
+
+    @command('n')
+    def getdynamicfeerate(self):
+        """Return current optimal fee rate per kilobyte, according
+        to the dynamic fees without the mempool"""
+        return self.config.fee_per_kb(dyn=True, mempool=False)
+
+    @command('n')
+    def getmempoolfeerate(self):
+        """Return current optimal fee rate per kilobyte, according
+        to the mempool"""
+        return self.config.fee_per_kb(dyn=True, mempool=True)
+
+    @command('n')
+    def getheight(self):
+        """Return current height of blockchain"""
+        return self.network.get_server_height()
+
+    @command('n')
+    def getblockhashfromheight(self, height):
+        """Return the blockhash of the block at the given height"""
+        out = {'hash': str(self.network.get_block_hash(height))}
+        return out
 
     @command('')
     def help(self):
