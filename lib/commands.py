@@ -254,13 +254,12 @@ class Commands:
                     tx = Transaction(raw).deserialize(True)
                     transaction['inputs'] = []
                     for tx_input in tx['inputs']:
-                        if tx_input['address'] == address:
-                            transaction['inputs'].append(tx_input['prevout_hash'])
-                            inputs_flag = True
+                        transaction['inputs'].append(tx_input['prevout_hash'])
+                        inputs_flag = True
                     if inputs_flag:
                         spent.append(transaction)
 
-        results['spent'] = spent
+        results['tx_summaries'] = spent
         height = self.network.get_server_height()
         results['chain_height'] = height
         return results
