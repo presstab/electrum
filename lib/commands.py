@@ -213,6 +213,59 @@ class Commands:
         results.append(json_obj)
         return results
 
+    @command('n')
+    def getaddressspent(self, address):
+        """Returns all transactions that contain the address argument as
+        an input."""
+
+        results = []
+        sh = bitcoin.address_to_scripthash(address)
+        history = self.network.synchronous_get(('blockchain.scripthash.get_history', [sh]))
+        for transaction in history:
+            if "tx_hash" in transaction:
+                raw = self.network.get_transaction(transaction['tx_hash'])
+                if raw:
+                    tx = Transaction(raw).deserialize()
+                    for tx_input in tx['inputs']:
+                        if tx_input['address'] == address:
+                            for key in tx:
+                                transaction[key] = tx[key]
+                            results.append(transaction)
+                            break
+        height = self.network.get_server_height()
+        json_obj = {'chain_height': height}
+        results.append(json_obj)
+        return results
+
+    @command('n')
+    def getaddressutxostate(self, address):
+        """For a given address, returns its UTXO list as well as former UTXOs
+        that have since been spent."""
+        results = {}
+        sh = bitcoin.address_to_scripthash(address)
+        unspent = self.network.listunspent_for_scripthash(sh)
+        results['unspent'] = unspent
+
+        spent = []
+        history = self.network.synchronous_get(('blockchain.scripthash.get_history', [sh]))
+        for transaction in history:
+            if "tx_hash" in transaction:
+                raw = self.network.get_transaction(transaction['tx_hash'])
+                if raw:
+                    inputs_flag = False
+                    tx = Transaction(raw).deserialize()
+                    transaction['inputs'] = []
+                    for tx_input in tx['inputs']:
+                        transaction['inputs'].append(tx_input['prevout_hash'])
+                        inputs_flag = True
+                    if inputs_flag:
+                        spent.append(transaction)
+
+        results['tx_summaries'] = spent
+        height = self.network.get_server_height()
+        results['chain_height'] = height
+        return results
+
     @command('')
     def serialize(self, jsontx):
         """Create a transaction from json inputs.
