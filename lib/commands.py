@@ -206,6 +206,10 @@ class Commands:
                 if raw:
                     tx = Transaction(raw)
                     output['inputs'] = tx.inputs()
+
+            if "height" in output:
+                output['block_hash'] = self.network.get_block_hash(output['height'])
+
         height = self.network.get_server_height()
         json_obj = {'chain_height': height}
         results.append(json_obj)
