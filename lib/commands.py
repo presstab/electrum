@@ -246,6 +246,9 @@ class Commands:
         results = {}
         sh = bitcoin.address_to_scripthash(address)
         unspent = self.network.listunspent_for_scripthash(sh)
+        for output in unspent:
+            if "height" in output:
+                output['block_hash'] = self.network.get_block_hash(output['height'])
         results['unspent'] = unspent
 
         spent = []
