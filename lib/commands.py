@@ -261,7 +261,10 @@ class Commands:
                     tx = Transaction(raw).deserialize()
                     transaction['inputs'] = []
                     for tx_input in tx['inputs']:
-                        transaction['inputs'].append(tx_input['prevout_hash'])
+                        spent_input = {}
+                        spent_input['txid'] = tx_input['prevout_hash']
+                        spent_input['n'] = tx_input['prevout_n']
+                        transaction['inputs'].append(spent_input)
                         inputs_flag = True
                     if inputs_flag:
                         spent.append(transaction)
