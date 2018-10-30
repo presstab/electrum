@@ -204,7 +204,73 @@ class Commands:
         is a walletless server query, results are not checked by SPV.
         """
         sh = Address.from_string(address).to_scripthash_hex()
-        return self.network.synchronous_get(('blockchain.scripthash.listunspent', [sh]))
+        results = self.network.listunspent_for_scripthash(sh)
+
+        for output in results:
+            if "height" in output:
+                output['block_hash'] = self.network.get_block_hash(output['height'])
+
+        height = self.network.get_server_height()
+        json_obj = {'chain_height': height}
+        results.append(json_obj)
+        return results
+
+    @command('n')
+    def getaddressspent(self, address):
+        """Returns all transactions that contain the address argument as
+        an input."""
+        results = []
+        sh = Address.from_string(address).to_scripthash_hex()
+        history = self.network.get_history_for_scripthash(sh)
+        for transaction in history:
+            if "tx_hash" in transaction:
+                raw = self.network.get_transaction(transaction['tx_hash'])
+                if raw:
+                    tx = Transaction(raw).deserialize()
+                    for tx_input in tx['inputs']:
+                        if tx_input['address'] == address:
+                            for key in tx:
+                                transaction[key] = tx[key]
+                            results.append(transaction)
+                            break
+        height = self.network.get_server_height()
+        json_obj = {'chain_height': height}
+        results.append(json_obj)
+        return results
+
+    @command('n')
+    def getaddressutxostate(self, address):
+        """For a given address, returns its UTXO list as well as former UTXOs
+        that have since been spent."""
+        results = {}
+        sh = Address.from_string(address).to_scripthash_hex()
+        unspent = self.network.listunspent_for_scripthash(sh)
+        for output in unspent:
+            if "height" in output:
+                output['block_hash'] = self.network.get_block_hash(output['height'])
+
+        results['unspent'] = unspent
+        spent = []
+        history = self.network.get_history_for_scripthash(sh)
+        for transaction in history:
+            if "tx_hash" in transaction:
+                raw = self.network.get_transaction(transaction['tx_hash'])
+                if raw:
+                    inputs_flag = False
+                    tx = Transaction(raw).deserialize()
+                    transaction['inputs'] = []
+                    for tx_input in tx['inputs']:
+                        spent_input = {}
+                        spent_input['txid'] = tx_input['prevout_hash']
+                        spent_input['n'] = tx_input['prevout_n']
+                        transaction['inputs'].append(spent_input)
+                        inputs_flag = True
+                    if inputs_flag:
+                        spent.append(transaction)
+        results['tx_summaries'] = spent
+        height = self.network.get_server_height()
+        results['chain_height'] = height
+        return results
 
     @command('')
     def serialize(self, jsontx):
@@ -662,6 +728,23 @@ class Commands:
         """Return current optimal fee rate per kilobyte, according
         to config settings (static/dynamic)"""
         return self.config.fee_per_kb()
+
+    @command('n')
+    def getdynamicfeerate(self):
+        """Return current optimal fee rate per kilobyte, according
+        to the dynamic fees without the mempool"""
+        return self.config.fee_per_kb()
+
+    @command('n')
+    def getheight(self):
+        """Return current height of blockchain"""
+        return self.network.get_server_height()
+
+    @command('n')
+    def getblockhashfromheight(self, height):
+        """Return the blockhash of the block at the given height"""
+        out = {'hash': str(self.network.get_block_hash(height))}
+        return out
 
     @command('')
     def help(self):

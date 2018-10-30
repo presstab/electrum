@@ -1056,3 +1056,30 @@ class Network(util.DaemonThread):
         if out != tx_hash:
             return False, "error: " + out
         return True, out
+
+    def get_transaction(self, transaction_hash, callback=None):
+        try:
+            out = self.synchronous_get(('blockchain.transaction.get', [str(transaction_hash)]), 30)
+        except BaseException as e:
+            return False, "error: " + str(e)
+
+        return out
+
+    def listunspent_for_scripthash(self, scripthash, callback=None):
+        try:
+            out = self.synchronous_get(('blockchain.scripthash.listunspent', [str(scripthash)]), 30)
+        except BaseException as e:
+            return False, "error: " + str(e)
+
+        return out
+
+    def get_history_for_scripthash(self, hash, callback=None):
+        try:
+            out = self.synchronous_get(('blockchain.scripthash.get_history', [str(hash)]), 30)
+        except BaseException as e:
+            return False, "error: " + str(e)
+
+        return out
+
+    def get_block_hash(self, height):
+        return self.blockchain().get_hash(height)
